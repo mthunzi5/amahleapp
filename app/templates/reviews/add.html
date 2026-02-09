@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Write Review - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="mb-4">Write a Review</h2>
+                    
+                    <div class="card mb-4 border-primary">
+                        <div class="card-body">
+                            <h5>{{ property.title }}</h5>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.province }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('main.add_review', id=property.id) }}">
+                        <div class="mb-4">
+                            <label class="form-label">Rating *</label>
+                            <div class="rating-input">
+                                <div class="btn-group" role="group">
+                                    <input type="radio" class="btn-check" name="rating" id="rating1" value="1" required>
+                                    <label class="btn btn-outline-warning" for="rating1">⭐</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating2" value="2">
+                                    <label class="btn btn-outline-warning" for="rating2">⭐⭐</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating3" value="3">
+                                    <label class="btn btn-outline-warning" for="rating3">⭐⭐⭐</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating4" value="4">
+                                    <label class="btn btn-outline-warning" for="rating4">⭐⭐⭐⭐</label>
+                                    
+                                    <input type="radio" class="btn-check" name="rating" id="rating5" value="5">
+                                    <label class="btn btn-outline-warning" for="rating5">⭐⭐⭐⭐⭐</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Review Title</label>
+                            <input type="text" name="title" class="form-control" placeholder="Summarize your experience">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Your Review *</label>
+                            <textarea name="comment" class="form-control" rows="6" placeholder="Share your experience with this property..." required></textarea>
+                            <div class="form-text">Help others make better decisions by sharing your honest feedback</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane"></i> Submit Review
+                            </button>
+                            <a href="{{ url_for('main.property_detail', id=property.id) }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

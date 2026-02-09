@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{{ property.title }} - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Property Images -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                     class="card-img-top" 
+                     alt="{{ property.title }}"
+                     onerror="this.src='https://via.placeholder.com/800x500?text=Property+Image'"
+                     style="max-height: 500px; object-fit: cover;">
+            </div>
+            
+            <!-- Property Details -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h1 class="card-title mb-3">{{ property.title }}</h1>
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-map-marker-alt"></i> {{ property.address }}, {{ property.city }}, {{ property.province }}
+                    </p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-bed fa-2x text-primary mb-2"></i>
+                                <h5>{{ property.bedrooms }}</h5>
+                                <p class="mb-0 text-muted">Bedrooms</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-bath fa-2x text-primary mb-2"></i>
+                                <h5>{{ property.bathrooms }}</h5>
+                                <p class="mb-0 text-muted">Bathrooms</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-door-open fa-2x text-primary mb-2"></i>
+                                <h5>{{ property.total_rooms }}</h5>
+                                <p class="mb-0 text-muted">Total Rooms</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-home fa-2x text-primary mb-2"></i>
+                                <h5>{{ property.property_type|capitalize }}</h5>
+                                <p class="mb-0 text-muted">Type</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3>Description</h3>
+                    <p>{{ property.description }}</p>
+                    
+                    {% if property.get_amenities_list() %}
+                    <h3 class="mt-4">Amenities</h3>
+                    <div class="row">
+                        {% for amenity in property.get_amenities_list() %}
+                        <div class="col-md-4 mb-2">
+                            <i class="fas fa-check-circle text-success"></i> {{ amenity }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Reviews Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Reviews ({{ reviews|length }})</h3>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="review-item mb-4 pb-4 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h5 class="mb-1">{{ review.user.full_name }}</h5>
+                                    <div class="mb-2">
+                                        {% for i in range(5) %}
+                                            {% if i < review.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <small class="text-muted">{{ review.created_at|datetime('%B %d, %Y') }}</small>
+                            </div>
+                            {% if review.title %}
+                                <h6 class="fw-bold">{{ review.title }}</h6>
+                            {% endif %}
+                            <p class="mb-0">{{ review.comment }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No reviews yet. Be the first to review this property!</p>
+                    {% endif %}
+                    
+                    {% if current_user.is_authenticated and has_booked and not current_user.role == 'landlord' %}
+                        <a href="{{ url_for('main.add_review', id=property.id) }}" class="btn btn-primary">
+                            <i class="fas fa-star"></i> Write a Review
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Booking Sidebar -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h2 class="text-primary mb-3">R{{ property.price_per_month }}<small class="text-muted">/month</small></h2>
+                    
+                    {% if property.available_rooms > 0 %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> {{ property.available_rooms }} rooms available
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle"></i> No rooms available
+                        </div>
+                    {% endif %}
+                    
+                    {% set avg_rating = property.get_average_rating() %}
+                    {% if avg_rating > 0 %}
+                    <div class="mb-3">
+                        <h5>Average Rating</h5>
+                        <div class="d-flex align-items-center">
+                            {% for i in range(5) %}
+                                {% if i < avg_rating %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                    <i class="far fa-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="ms-2">{{ "%.1f"|format(avg_rating) }}/5</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Landlord Information</h5>
+                    <p class="mb-2"><strong>{{ property.landlord.full_name }}</strong></p>
+                    {% if property.landlord.phone %}
+                        <p class="mb-2">
+                            <i class="fas fa-phone"></i> {{ property.landlord.phone }}
+                        </p>
+                    {% endif %}
+                    <p class="mb-3">
+                        <i class="fas fa-envelope"></i> {{ property.landlord.email }}
+                    </p>
+                    
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role != 'landlord' %}
+                            {% if property.available_rooms > 0 %}
+                                <a href="{{ url_for('main.book_property', id=property.id) }}" class="btn btn-primary w-100 btn-lg">
+                                    <i class="fas fa-calendar-check"></i> Book Now
+                                </a>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100 btn-lg">
+                            Login to Book
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

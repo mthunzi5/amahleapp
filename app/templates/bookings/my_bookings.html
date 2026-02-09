@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">My Bookings</h1>
+    
+    {% if bookings %}
+        <div class="row">
+            {% for booking in bookings %}
+            <div class="col-md-12 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                                     class="img-fluid rounded" 
+                                     alt="Property"
+                                     onerror="this.src='https://via.placeholder.com/150x100?text=Property'">
+                            </div>
+                            <div class="col-md-5">
+                                <h5 class="card-title mb-2">{{ booking.property.title }}</h5>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-map-marker-alt"></i> {{ booking.property.city }}, {{ booking.property.province }}
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Check-in:</strong> {{ booking.check_in_date }}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Rooms:</strong> {{ booking.num_rooms }}
+                                </p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="mb-1"><strong>Total Price:</strong></p>
+                                <h4 class="text-primary">R{{ booking.total_price }}</h4>
+                                <p class="mb-1"><strong>Status:</strong></p>
+                                {% if booking.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif booking.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif booking.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% elif booking.status == 'cancelled' %}
+                                    <span class="badge bg-secondary">Cancelled</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <a href="{{ url_for('main.property_detail', id=booking.property_id) }}" class="btn btn-sm btn-outline-primary mb-2 w-100">
+                                    View Property
+                                </a>
+                                {% if booking.status == 'pending' or booking.status == 'approved' %}
+                                    <form method="POST" action="{{ url_for('main.cancel_booking', id=booking.id) }}" onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                        <button type="submit" class="btn btn-sm btn-danger w-100">Cancel</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if booking.response %}
+                        <div class="mt-3">
+                            <hr>
+                            <p class="mb-1"><strong>Landlord Response:</strong></p>
+                            <p class="mb-0 text-muted">{{ booking.response }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h4>No bookings yet</h4>
+            <p>Browse properties and make your first booking!</p>
+            <a href="{{ url_for('main.properties') }}" class="btn btn-primary mt-2">Browse Properties</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

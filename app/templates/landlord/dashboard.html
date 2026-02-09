@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Landlord Dashboard - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Landlord Dashboard</h1>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ total_properties }}</h3>
+                    <p class="card-text">Total Properties</p>
+                    <i class="fas fa-building fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ approved_bookings }}</h3>
+                    <p class="card-text">Active Bookings</p>
+                    <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ pending_bookings|length }}</h3>
+                    <p class="card-text">Pending Requests</p>
+                    <i class="fas fa-clock fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3 class="card-title">R{{ "%.2f"|format(total_revenue) }}</h3>
+                    <p class="card-text">Total Revenue</p>
+                    <i class="fas fa-money-bill-wave fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Quick Actions</h3>
+        </div>
+        <div class="card-body">
+            <a href="{{ url_for('landlord.add_property') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus"></i> Add New Property
+            </a>
+            <a href="{{ url_for('landlord.properties') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-list"></i> Manage Properties
+            </a>
+            <a href="{{ url_for('landlord.bookings') }}" class="btn btn-outline-success">
+                <i class="fas fa-calendar-check"></i> View All Bookings
+            </a>
+        </div>
+    </div>
+    
+    <!-- Pending Booking Requests -->
+    {% if pending_bookings %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Pending Booking Requests</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Tenant</th>
+                            <th>Check-in</th>
+                            <th>Rooms</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in pending_bookings[:10] %}
+                        <tr>
+                            <td>{{ booking.property.title }}</td>
+                            <td>
+                                {{ booking.user.full_name }}<br>
+                                <small class="text-muted">{{ booking.user.email }}</small>
+                            </td>
+                            <td>{{ booking.check_in_date }}</td>
+                            <td>{{ booking.num_rooms }}</td>
+                            <td class="fw-bold">R{{ booking.total_price }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ booking.id }}">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ booking.id }}">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+                        
+                        <!-- Approve Modal -->
+                        <div class="modal fade" id="approveModal{{ booking.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Approve Booking</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('landlord.approve_booking', id=booking.id) }}">
+                                        <div class="modal-body">
+                                            <p><strong>Property:</strong> {{ booking.property.title }}</p>
+                                            <p><strong>Tenant:</strong> {{ booking.user.full_name }}</p>
+                                            <p><strong>Rooms:</strong> {{ booking.num_rooms }}</p>
+                                            {% if booking.message %}
+                                            <p><strong>Message from tenant:</strong><br>{{ booking.message }}</p>
+                                            {% endif %}
+                                            <div class="mb-3">
+                                                <label class="form-label">Response (Optional)</label>
+                                                <textarea name="response" class="form-control" rows="3" placeholder="Add a message for the tenant..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-success">Approve Booking</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Reject Modal -->
+                        <div class="modal fade" id="rejectModal{{ booking.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Reject Booking</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('landlord.reject_booking', id=booking.id) }}">
+                                        <div class="modal-body">
+                                            <p><strong>Property:</strong> {{ booking.property.title }}</p>
+                                            <p><strong>Tenant:</strong> {{ booking.user.full_name }}</p>
+                                            <div class="mb-3">
+                                                <label class="form-label">Reason for rejection</label>
+                                                <textarea name="response" class="form-control" rows="3" placeholder="Explain why you're rejecting this booking..." required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger">Reject Booking</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Recent Properties -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="mb-0">Your Properties</h3>
+        </div>
+        <div class="card-body">
+            {% if properties %}
+            <div class="row">
+                {% for property in properties[:6] %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ property.title }}</h5>
+                            <p class="text-muted mb-2">{{ property.city }}</p>
+                            <p class="mb-2">
+                                <strong>R{{ property.price_per_month }}/month</strong>
+                            </p>
+                            <p class="mb-2">
+                                Available: {{ property.available_rooms }}/{{ property.total_rooms }}
+                            </p>
+                            <a href="{{ url_for('landlord.edit_property', id=property.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">You haven't added any properties yet. <a href="{{ url_for('landlord.add_property') }}">Add your first property</a></p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

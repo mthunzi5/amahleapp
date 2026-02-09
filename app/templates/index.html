@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Amahle Rentals{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section bg-light py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold">Find Your Perfect Home</h1>
+                <p class="lead">Discover quality accommodation that fits your lifestyle and budget.</p>
+                <a href="{{ url_for('main.properties') }}" class="btn btn-primary btn-lg">Browse Properties</a>
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary btn-lg ms-2">Get Started</a>
+                {% endif %}
+            </div>
+            <div class="col-lg-6">
+                <img src="{{ url_for('static', filename='images/hero.jpg') }}" alt="Hero" class="img-fluid rounded" onerror="this.src='https://via.placeholder.com/600x400?text=Find+Your+Home'">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search Section -->
+<section class="search-section py-4 bg-white shadow-sm">
+    <div class="container">
+        <form action="{{ url_for('main.properties') }}" method="GET" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" name="city" class="form-control" placeholder="City">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="min_price" class="form-control" placeholder="Min Price">
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="max_price" class="form-control" placeholder="Max Price">
+            </div>
+            <div class="col-md-2">
+                <select name="bedrooms" class="form-select">
+                    <option value="">Bedrooms</option>
+                    <option value="1">1+</option>
+                    <option value="2">2+</option>
+                    <option value="3">3+</option>
+                    <option value="4">4+</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- Featured Properties -->
+{% if featured_properties %}
+<section class="featured-section py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Featured Properties</h2>
+        <div class="row">
+            {% for property in featured_properties[:6] %}
+            <div class="col-md-4 mb-4">
+                <div class="card property-card h-100 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                             class="card-img-top" 
+                             alt="{{ property.title }}"
+                             onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        <span class="badge bg-warning position-absolute top-0 end-0 m-2">Featured</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ property.title }}</h5>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.province }}
+                        </p>
+                        <p class="card-text text-truncate">{{ property.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-primary fw-bold">R{{ property.price_per_month }}/month</span>
+                            <span class="badge bg-success">{{ property.available_rooms }} available</span>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-bed"></i> {{ property.bedrooms }} beds
+                                <i class="fas fa-bath ms-2"></i> {{ property.bathrooms }} baths
+                            </small>
+                        </div>
+                        {% set avg_rating = property.get_average_rating() %}
+                        {% if avg_rating > 0 %}
+                        <div class="mb-2">
+                            {% for i in range(5) %}
+                                {% if i < avg_rating %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                    <i class="far fa-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <small class="text-muted">({{ property.reviews|length }} reviews)</small>
+                        </div>
+                        {% endif %}
+                        <a href="{{ url_for('main.property_detail', id=property.id) }}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- All Properties -->
+<section class="properties-section py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-4">Available Properties</h2>
+        <div class="row">
+            {% if properties %}
+                {% for property in properties %}
+                <div class="col-md-4 mb-4">
+                    <div class="card property-card h-100 shadow-sm">
+                        <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                             class="card-img-top" 
+                             alt="{{ property.title }}"
+                             onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ property.title }}</h5>
+                            <p class="text-muted mb-2">
+                                <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.province }}
+                            </p>
+                            <p class="card-text text-truncate">{{ property.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-primary fw-bold">R{{ property.price_per_month }}/month</span>
+                                <span class="badge bg-success">{{ property.available_rooms }} available</span>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-bed"></i> {{ property.bedrooms }} beds
+                                    <i class="fas fa-bath ms-2"></i> {{ property.bathrooms }} baths
+                                </small>
+                            </div>
+                            {% set avg_rating = property.get_average_rating() %}
+                            {% if avg_rating > 0 %}
+                            <div class="mb-2">
+                                {% for i in range(5) %}
+                                    {% if i < avg_rating %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-warning"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <small class="text-muted">({{ property.reviews|length }} reviews)</small>
+                            </div>
+                            {% endif %}
+                            <a href="{{ url_for('main.property_detail', id=property.id) }}" class="btn btn-primary w-100">View Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <h4>No properties available yet</h4>
+                        <p>Check back soon for new listings!</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('main.properties') }}" class="btn btn-primary btn-lg">View All Properties</a>
+        </div>
+    </div>
+</section>
+
+<!-- Reviews Section -->
+{% if reviews %}
+<section class="reviews-section py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Recent Reviews</h2>
+        <div class="row">
+            {% for review in reviews[:3] %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-2">
+                            {% for i in range(5) %}
+                                {% if i < review.rating %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                    <i class="far fa-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <h5 class="card-title">{{ review.title or 'Great Place!' }}</h5>
+                        <p class="card-text">{{ review.comment[:150] }}{% if review.comment|length > 150 %}...{% endif %}</p>
+                        <p class="text-muted mb-0">
+                            <small>- {{ review.user.full_name }}</small><br>
+                            <small class="text-muted">{{ review.created_at|datetime('%B %d, %Y') }}</small>
+                        </p>
+                        <a href="{{ url_for('main.property_detail', id=review.property_id) }}" class="btn btn-sm btn-outline-primary mt-2">View Property</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Call to Action -->
+<section class="cta-section bg-primary text-white py-5">
+    <div class="container text-center">
+        <h2 class="mb-3">Are you a landlord?</h2>
+        <p class="lead mb-4">List your properties and connect with quality tenants</p>
+        {% if current_user.is_authenticated and current_user.role == 'landlord' %}
+            <a href="{{ url_for('landlord.add_property') }}" class="btn btn-light btn-lg">Add Property</a>
+        {% else %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">Register as Landlord</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

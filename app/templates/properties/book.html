@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Book Property - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="mb-4">Book: {{ property.title }}</h2>
+                    
+                    <div class="alert alert-info">
+                        <strong>Property Details:</strong><br>
+                        Location: {{ property.city }}, {{ property.province }}<br>
+                        Price: R{{ property.price_per_month }}/month<br>
+                        Available Rooms: {{ property.available_rooms }}
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('main.book_property', id=property.id) }}">
+                        <div class="mb-3">
+                            <label class="form-label">Check-in Date</label>
+                            <input type="date" name="check_in_date" class="form-control" required>
+                            <div class="form-text">Select your preferred move-in date</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Number of Rooms</label>
+                            <input type="number" name="num_rooms" class="form-control" value="1" min="1" max="{{ property.available_rooms }}" required>
+                            <div class="form-text">Maximum {{ property.available_rooms }} rooms available</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Message to Landlord (Optional)</label>
+                            <textarea name="message" class="form-control" rows="4" placeholder="Introduce yourself or ask any questions..."></textarea>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <strong>Note:</strong> Your booking request will be sent to the landlord for review. You will be notified once the landlord responds.
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane"></i> Submit Booking Request
+                            </button>
+                            <a href="{{ url_for('main.property_detail', id=property.id) }}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
