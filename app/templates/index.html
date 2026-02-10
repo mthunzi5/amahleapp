@@ -63,11 +63,20 @@
             <div class="col-md-4 mb-4">
                 <div class="card property-card h-100 shadow-sm">
                     <div class="position-relative">
-                        <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
-                             class="card-img-top" 
-                             alt="{{ property.title }}"
-                             onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        {% set images = property.get_images_list() %}
+                        {% if images %}
+                            <img src="{{ url_for('static', filename=images[0]) }}" 
+                                 class="card-img-top" 
+                                 alt="{{ property.title }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                                 class="card-img-top" 
+                                 alt="{{ property.title }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        {% endif %}
                         <span class="badge bg-warning position-absolute top-0 end-0 m-2">Featured</span>
+                        {% include 'partials/wishlist_button.html' %}
                     </div>
                     <div class="card-body">
                         <h5 class="card-title">{{ property.title }}</h5>
@@ -117,10 +126,21 @@
                 {% for property in properties %}
                 <div class="col-md-4 mb-4">
                     <div class="card property-card h-100 shadow-sm">
-                        <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
-                             class="card-img-top" 
-                             alt="{{ property.title }}"
-                             onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                    <div class="position-relative">
+                        {% set images = property.get_images_list() %}
+                        {% if images %}
+                            <img src="{{ url_for('static', filename=images[0]) }}" 
+                                 class="card-img-top" 
+                                 alt="{{ property.title }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                                 class="card-img-top" 
+                                 alt="{{ property.title }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        {% endif %}
+                        {% include 'partials/wishlist_button.html' %}
+                    </div>
                         <div class="card-body">
                             <h5 class="card-title">{{ property.title }}</h5>
                             <p class="text-muted mb-2">

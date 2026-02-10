@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models import User
 from app.forms import RegistrationForm, LoginForm
+from app.utils.email import send_welcome_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -25,7 +26,13 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        flash('Registration successful! Please log in.', 'success')
+        # Send welcome email
+        try:
+            send_welcome_email(user)
+        except Exception as e:
+            print(f"Error sending welcome email: {e}")
+        
+        flash('Registration successful! Please check your email and log in.', 'success')
         return redirect(url_for('auth.login'))
     
     return render_template('auth/register.html', form=form)

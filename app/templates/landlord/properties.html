@@ -18,11 +18,20 @@
                 <div class="card shadow-sm">
                     <div class="row g-0">
                         <div class="col-md-4">
-                            <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
-                                 class="img-fluid rounded-start h-100" 
-                                 alt="{{ property.title }}"
-                                 style="object-fit: cover;"
-                                 onerror="this.src='https://via.placeholder.com/200x200?text=Property'">
+                            {% set images = property.get_images_list() %}
+                            {% if images %}
+                                <img src="{{ url_for('static', filename=images[0]) }}" 
+                                     class="img-fluid rounded-start h-100" 
+                                     alt="{{ property.title }}"
+                                     style="object-fit: cover;"
+                                     onerror="this.src='https://via.placeholder.com/200x200?text=Property'">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                                     class="img-fluid rounded-start h-100" 
+                                     alt="{{ property.title }}"
+                                     style="object-fit: cover;"
+                                     onerror="this.src='https://via.placeholder.com/200x200?text=Property'">
+                            {% endif %}
                         </div>
                         <div class="col-md-8">
                             <div class="card-body">

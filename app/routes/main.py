@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
-from app.models import Property, Review, Booking, User
+from app.models import Property, Review, Booking, User, ReportAbuse, UserActivityLog
 from app import db
 from sqlalchemy import or_, and_
 import random
+from app.utils.email import send_new_booking_request_email
 
 main_bp = Blueprint('main', __name__)
 
@@ -129,6 +130,13 @@ def book_property(id):
         db.session.add(booking)
         db.session.commit()
         
+        # Send email notification to landlord
+        try:
+            landlord = property.landlord
+            send_new_booking_request_email(landlord, booking)
+        except Exception as e:
+            print(f"Error sending booking notification email: {e}")
+        
         flash('Booking request submitted successfully! The landlord will review your request.', 'success')
         return redirect(url_for('main.my_bookings'))
     
@@ -209,3 +217,72 @@ def add_review(id):
         return redirect(url_for('main.property_detail', id=id))
     
     return render_template('reviews/add.html', property=property)
+
+
+@main_bp.route('/report/submit', methods=['POST'])
+@login_required
+def submit_report():
+    """Handle report abuse submissions from users"""
+    reported_type = request.form.get('reported_type')
+    reported_id = request.form.get('reported_id', type=int)
+    reason = request.form.get('reason')
+    description = request.form.get('description', '')
+    
+    # Validate inputs
+    if not all([reported_type, reported_id, reason]):
+        flash('Please fill in all required fields.', 'danger')
+        return redirect(request.referrer or url_for('main.index'))
+    
+    if reported_type not in ['property', 'user', 'review']:
+        flash('Invalid report type.', 'danger')
+        return redirect(request.referrer or url_for('main.index'))
+    
+    # Check if resource exists
+    if reported_type == 'property':
+        resource = Property.query.get(reported_id)
+    elif reported_type == 'user':
+        resource = User.query.get(reported_id)
+    elif reported_type == 'review':
+        resource = Review.query.get(reported_id)
+    
+    if not resource:
+        flash('The reported resource does not exist.', 'danger')
+        return redirect(request.referrer or url_for('main.index'))
+    
+    # Check for duplicate reports
+    existing_report = ReportAbuse.query.filter_by(
+        reporter_id=current_user.id,
+        reported_type=reported_type,
+        reported_id=reported_id,
+        status='pending'
+    ).first()
+    
+    if existing_report:
+        flash('You have already reported this. Our team is reviewing it.', 'warning')
+        return redirect(request.referrer or url_for('main.index'))
+    
+    # Create report
+    report = ReportAbuse(
+        reporter_id=current_user.id,
+        reported_type=reported_type,
+        reported_id=reported_id,
+        reason=reason,
+        description=description
+    )
+    
+    db.session.add(report)
+    
+    # Log activity
+    log = UserActivityLog(
+        user_id=current_user.id,
+        action='report_submitted',
+        description=f'Reported {reported_type} #{reported_id}: {reason}',
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
+    
+    db.session.commit()
+    
+    flash('Report submitted successfully. Our team will review it shortly.', 'success')
+    return redirect(request.referrer or url_for('main.index'))
+

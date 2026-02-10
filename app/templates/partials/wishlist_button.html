@@ -1,0 +1,9 @@
+<!-- Wishlist Heart Button -->
+{% if current_user.is_authenticated and current_user.role != 'landlord' %}
+<button class="btn btn-sm btn-light wishlist-toggle position-absolute top-0 start-0 m-2 rounded-circle" 
+        data-property-id="{{ property.id }}"
+        style="width: 40px; height: 40px; z-index: 10;"
+        title="Add to wishlist">
+    <i class="fas fa-heart wishlist-icon" style="color: #ddd;"></i>
+</button>
+{% endif %}

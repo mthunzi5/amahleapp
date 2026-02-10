@@ -1,11 +1,19 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required, current_user
 from functools import wraps
 from app import db
 from app.models import Property, Booking, Review
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
+from app.utils.email import send_booking_approved_email, send_booking_rejected_email
 
 landlord_bp = Blueprint('landlord', __name__, url_prefix='/landlord')
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def landlord_required(f):
     @wraps(f)
@@ -67,6 +75,24 @@ def properties():
 @landlord_required
 def add_property():
     if request.method == 'POST':
+        # Handle image uploads
+        uploaded_files = request.files.getlist('images')
+        image_paths = []
+        
+        if uploaded_files and uploaded_files[0].filename:
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            for file in uploaded_files:
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Add timestamp to prevent filename conflicts
+                    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{timestamp}_{filename}"
+                    filepath = os.path.join(upload_folder, filename)
+                    file.save(filepath)
+                    image_paths.append(f"uploads/{filename}")
+        
         property = Property(
             landlord_id=current_user.id,
             title=request.form.get('title'),
@@ -82,6 +108,7 @@ def add_property():
             available_rooms=int(request.form.get('total_rooms')),  # Initially all rooms are available
             price_per_month=float(request.form.get('price_per_month')),
             amenities=request.form.get('amenities'),
+            images=','.join(image_paths) if image_paths else None,
             is_available=True
         )
         
@@ -105,6 +132,35 @@ def edit_property(id):
         return redirect(url_for('landlord.properties'))
     
     if request.method == 'POST':
+        # Handle new image uploads
+        uploaded_files = request.files.getlist('images')
+        new_image_paths = []
+        
+        if uploaded_files and uploaded_files[0].filename:
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            for file in uploaded_files:
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Add timestamp to prevent filename conflicts
+                    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{timestamp}_{filename}"
+                    filepath = os.path.join(upload_folder, filename)
+                    file.save(filepath)
+                    new_image_paths.append(f"uploads/{filename}")
+        
+        # Keep existing images unless explicitly removed
+        existing_images = property.get_images_list() if property.images else []
+        removed_images = request.form.get('removed_images', '').split(',')
+        removed_images = [img.strip() for img in removed_images if img.strip()]
+        
+        # Filter out removed images
+        remaining_images = [img for img in existing_images if img not in removed_images]
+        
+        # Combine remaining and new images
+        all_images = remaining_images + new_image_paths
+        
         property.title = request.form.get('title')
         property.description = request.form.get('description')
         property.property_type = request.form.get('property_type')
@@ -117,6 +173,7 @@ def edit_property(id):
         property.total_rooms = int(request.form.get('total_rooms'))
         property.price_per_month = float(request.form.get('price_per_month'))
         property.amenities = request.form.get('amenities')
+        property.images = ','.join(all_images) if all_images else None
         property.is_available = request.form.get('is_available') == 'on'
         property.updated_at = datetime.utcnow()
         
@@ -189,6 +246,12 @@ def approve_booking(id):
     
     db.session.commit()
     
+    # Send approval email to tenant
+    try:
+        send_booking_approved_email(booking.user, booking, booking.response)
+    except Exception as e:
+        print(f"Error sending approval email: {e}")
+    
     flash('Booking approved successfully!', 'success')
     return redirect(url_for('landlord.bookings'))
 
@@ -208,6 +271,12 @@ def reject_booking(id):
     booking.response = request.form.get('response', '')
     
     db.session.commit()
+    
+    # Send rejection email to tenant
+    try:
+        send_booking_rejected_email(booking.user, booking, booking.response)
+    except Exception as e:
+        print(f"Error sending rejection email: {e}")
     
     flash('Booking rejected.', 'info')
     return redirect(url_for('landlord.bookings'))

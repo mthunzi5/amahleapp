@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Abuse Reports - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4"><i class="fas fa-flag"></i> Abuse Reports</h1>
+    
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if request.args.get('status', 'pending') == 'pending' %}active{% endif %}" 
+               href="{{ url_for('admin_governance.reports', status='pending') }}">
+                Pending <span class="badge bg-warning">{{ counts.pending }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.args.get('status') == 'investigating' %}active{% endif %}" 
+               href="{{ url_for('admin_governance.reports', status='investigating') }}">
+                Investigating <span class="badge bg-info">{{ counts.investigating }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.args.get('status') == 'resolved' %}active{% endif %}" 
+               href="{{ url_for('admin_governance.reports', status='resolved') }}">
+                Resolved <span class="badge bg-success">{{ counts.resolved }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.args.get('status') == 'dismissed' %}active{% endif %}" 
+               href="{{ url_for('admin_governance.reports', status='dismissed') }}">
+                Dismissed <span class="badge bg-secondary">{{ counts.dismissed }}</span>
+            </a>
+        </li>
+    </ul>
+    
+    <!-- Reports List -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if reports %}
+                <div class="list-group">
+                    {% for report in reports %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">
+                                    <span class="badge bg-{{ 'warning' if report.reported_type == 'property' else 'info' if report.reported_type == 'user' else 'secondary' }}">
+                                        {{ report.reported_type|capitalize }}
+                                    </span>
+                                    Report #{{ report.id }} - {{ report.reported_type|capitalize }} #{{ report.reported_id }}
+                                </h5>
+                                <p class="mb-1"><strong>Reason:</strong> {{ report.reason }}</p>
+                                <p class="mb-2">{{ report.description }}</p>
+                                <small class="text-muted">
+                                    Reported by <strong>{{ report.reporter.username }}</strong> 
+                                    on {{ report.created_at|datetime('%Y-%m-%d %H:%M') }}
+                                    {% if report.resolved_at %}
+                                        | Resolved on {{ report.resolved_at|datetime('%Y-%m-%d %H:%M') }}
+                                        {% if report.resolved_by_user %}
+                                            by {{ report.resolved_by_user.username }}
+                                        {% endif %}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="ms-3">
+                                <span class="badge bg-{{ 'warning' if report.status == 'pending' else 'info' if report.status == 'investigating' else 'success' if report.status == 'resolved' else 'secondary' }} mb-2">
+                                    {{ report.status|upper }}
+                                </span>
+                                <br>
+                                <a href="{{ url_for('admin_governance.report_detail', report_id=report.id) }}" 
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted text-center py-4">No reports found with status "{{ request.args.get('status', 'pending') }}"</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

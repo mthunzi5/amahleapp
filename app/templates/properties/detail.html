@@ -7,18 +7,82 @@
     <div class="row">
         <!-- Property Images -->
         <div class="col-lg-8">
-            <div class="card mb-4">
-                <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
-                     class="card-img-top" 
-                     alt="{{ property.title }}"
-                     onerror="this.src='https://via.placeholder.com/800x500?text=Property+Image'"
-                     style="max-height: 500px; object-fit: cover;">
-            </div>
+            {% set images = property.get_images_list() %}
+            {% if images %}
+                <!-- Image Carousel -->
+                <div id="propertyCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        {% for image in images %}
+                        <button type="button" data-bs-target="#propertyCarousel" data-bs-slide-to="{{ loop.index0 }}" 
+                                {% if loop.first %}class="active" aria-current="true"{% endif %} 
+                                aria-label="Slide {{ loop.index }}"></button>
+                        {% endfor %}
+                    </div>
+                    <div class="carousel-inner">
+                        {% for image in images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ url_for('static', filename=image) }}" 
+                                 class="d-block w-100" 
+                                 alt="{{ property.title }}"
+                                 style="max-height: 500px; object-fit: cover;"
+                                 onerror="this.src='https://via.placeholder.com/800x500?text=Property+Image'">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if images|length > 1 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#propertyCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#propertyCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                    {% endif %}
+                </div>
+                
+                <!-- Image Thumbnails -->
+                {% if images|length > 1 %}
+                <div class="row g-2 mb-4">
+                    {% for image in images[:6] %}
+                    <div class="col-2">
+                        <img src="{{ url_for('static', filename=image) }}" 
+                             class="img-fluid rounded cursor-pointer" 
+                             alt="Thumbnail"
+                             style="height: 80px; object-fit: cover; cursor: pointer;"
+                             onclick="document.querySelector('[data-bs-slide-to=\"{{ loop.index0 }}\"]').click()">
+                    </div>
+                    {% endfor %}
+                    {% if images|length > 6 %}
+                    <div class="col-2 d-flex align-items-center justify-content-center bg-light rounded">
+                        <span class="text-muted">+{{ images|length - 6 }} more</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% else %}
+                <!-- No images placeholder -->
+                <div class="card mb-4">
+                    <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                         class="card-img-top" 
+                         alt="{{ property.title }}"
+                         onerror="this.src='https://via.placeholder.com/800x500?text=Property+Image'"
+                         style="max-height: 500px; object-fit: cover;">
+                </div>
+            {% endif %}
             
             <!-- Property Details -->
             <div class="card mb-4">
                 <div class="card-body">
-                    <h1 class="card-title mb-3">{{ property.title }}</h1>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h1 class="card-title mb-0">{{ property.title }}</h1>
+                        {% if current_user.is_authenticated and current_user.id != property.landlord_id %}
+                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                    data-bs-toggle="modal" data-bs-target="#reportModalproperty{{ property.id }}">
+                                <i class="fas fa-flag"></i> Report
+                            </button>
+                        {% endif %}
+                    </div>
                     <p class="text-muted mb-3">
                         <i class="fas fa-map-marker-alt"></i> {{ property.address }}, {{ property.city }}, {{ property.province }}
                     </p>
@@ -148,6 +212,14 @@
                     
                     <hr>
                     
+                    <div class="mb-3">
+                        <a href="{{ url_for('calendar.property_calendar', property_id=property.id) }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-calendar-alt"></i> View Availability Calendar
+                        </a>
+                    </div>
+                    
+                    <hr>
+                    
                     <h5 class="mb-3">Landlord Information</h5>
                     <p class="mb-2"><strong>{{ property.landlord.full_name }}</strong></p>
                     {% if property.landlord.phone %}
@@ -177,4 +249,11 @@
         </div>
     </div>
 </div>
+
+<!-- Report Modal -->
+{% if current_user.is_authenticated and current_user.id != property.landlord_id %}
+    {% set resource_type = 'property' %}
+    {% set resource_id = property.id %}
+    {% include 'partials/report_modal.html' %}
+{% endif %}
 {% endblock %}

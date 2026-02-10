@@ -14,10 +14,18 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-2">
-                                <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
-                                     class="img-fluid rounded" 
-                                     alt="Property"
-                                     onerror="this.src='https://via.placeholder.com/150x100?text=Property'">
+                                {% set images = booking.property.get_images_list() %}
+                                {% if images %}
+                                    <img src="{{ url_for('static', filename=images[0]) }}" 
+                                         class="img-fluid rounded" 
+                                         alt="Property"
+                                         onerror="this.src='https://via.placeholder.com/150x100?text=Property'">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                                         class="img-fluid rounded" 
+                                         alt="Property"
+                                         onerror="this.src='https://via.placeholder.com/150x100?text=Property'">
+                                {% endif %}
                             </div>
                             <div class="col-md-5">
                                 <h5 class="card-title mb-2">{{ booking.property.title }}</h5>

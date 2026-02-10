@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}My Wishlist - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4"><i class="fas fa-heart text-danger"></i> My Wishlist</h1>
+    
+    {% if wishlists %}
+        <div class="row">
+            {% for wishlist in wishlists %}
+            {% set property = wishlist.property %}
+            <div class="col-md-4 mb-4">
+                <div class="card property-card h-100 shadow-sm">
+                    <div class="position-relative">
+                        {% set images = property.get_images_list() %}
+                        {% if images %}
+                            <img src="{{ url_for('static', filename=images[0]) }}" 
+                                 class="card-img-top" 
+                                 alt="{{ property.title }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/placeholder.jpg') }}" 
+                                 class="card-img-top" 
+                                 alt="{{ property.title }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300?text=Property+Image'">
+                        {% endif %}
+                        <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 remove-wishlist" 
+                                data-property-id="{{ property.id }}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ property.title }}</h5>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.province }}
+                        </p>
+                        <p class="card-text text-truncate">{{ property.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-primary fw-bold">R{{ property.price_per_month }}/month</span>
+                            {% if property.available_rooms > 0 %}
+                                <span class="badge bg-success">{{ property.available_rooms }} available</span>
+                            {% else %}
+                                <span class="badge bg-danger">No rooms</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-bed"></i> {{ property.bedrooms }} beds
+                                <i class="fas fa-bath ms-2"></i> {{ property.bathrooms }} baths
+                            </small>
+                        </div>
+                        <a href="{{ url_for('main.property_detail', id=property.id) }}" class="btn btn-primary w-100">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center py-5">
+            <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+            <h4>Your wishlist is empty</h4>
+            <p>Start adding properties you love by clicking the heart icon on property cards!</p>
+            <a href="{{ url_for('main.properties') }}" class="btn btn-primary mt-3">
+                <i class="fas fa-search"></i> Browse Properties
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.remove-wishlist').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const propertyId = this.dataset.propertyId;
+        
+        fetch(`/wishlist/remove/${propertyId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

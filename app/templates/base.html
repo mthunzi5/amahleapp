@@ -38,14 +38,29 @@
                             </li>
                         {% elif current_user.role == 'admin' %}
                             <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin_governance.dashboard') }}">
+                                    <i class="fas fa-shield-alt"></i> Governance
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('admin.index') }}">
-                                    <i class="fas fa-shield-alt"></i> Admin
+                                    <i class="fas fa-database"></i> Database
                                 </a>
                             </li>
                         {% else %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('main.my_bookings') }}">
                                     <i class="fas fa-calendar-check"></i> My Bookings
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('calendar.my_calendar') }}">
+                                    <i class="fas fa-calendar-alt"></i> Calendar
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('wishlist.index') }}">
+                                    <i class="fas fa-heart"></i> Wishlist
                                 </a>
                             </li>
                         {% endif %}

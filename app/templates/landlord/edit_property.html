@@ -11,7 +11,8 @@
                     <h2 class="mb-0">Edit Property</h2>
                 </div>
                 <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('landlord.edit_property', id=property.id) }}">
+                    <form method="POST" action="{{ url_for('landlord.edit_property', id=property.id) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="removed_images" id="removedImages" value="">
                         <h4 class="mb-3">Basic Information</h4>
                         <div class="row mb-3">
                             <div class="col-md-12">
@@ -89,6 +90,39 @@
                             <div class="form-text">Separate multiple amenities with commas</div>
                         </div>
                         
+                        <h4 class="mb-3 mt-4">Property Images</h4>
+                        
+                        <!-- Existing Images -->
+                        {% if property.images %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Images</label>
+                            <div class="row g-3" id="currentImages">
+                                {% for image in property.get_images_list() %}
+                                <div class="col-md-3 col-sm-6" data-image="{{ image }}">
+                                    <div class="card">
+                                        <img src="{{ url_for('static', filename=image) }}" class="card-img-top" alt="Property image" style="height: 150px; object-fit: cover;">
+                                        <div class="card-body p-2 text-center">
+                                            <button type="button" class="btn btn-sm btn-danger remove-image" data-image="{{ image }}">
+                                                <i class="fas fa-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Add New Images -->
+                        <div class="mb-3">
+                            <label class="form-label">Add New Images (Optional)</label>
+                            <input type="file" name="images" class="form-control" multiple accept="image/*" id="imageUpload">
+                            <div class="form-text">Upload additional images (PNG, JPG, JPEG, GIF, WEBP). Max 16MB per file.</div>
+                        </div>
+                        
+                        <!-- New Images Preview -->
+                        <div id="imagePreview" class="row g-3 mb-3"></div>
+                        
                         <div class="mb-3 form-check">
                             <input type="checkbox" name="is_available" class="form-check-input" id="isAvailable" {% if property.is_available %}checked{% endif %}>
                             <label class="form-check-label" for="isAvailable">
@@ -112,4 +146,54 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+// Track removed images
+const removedImages = new Set();
+
+// Remove existing image
+document.querySelectorAll('.remove-image').forEach(button => {
+    button.addEventListener('click', function() {
+        const imagePath = this.getAttribute('data-image');
+        removedImages.add(imagePath);
+        document.getElementById('removedImages').value = Array.from(removedImages).join(',');
+        
+        // Hide the image card
+        this.closest('[data-image]').remove();
+    });
+});
+
+// Image preview for new uploads
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    
+    const files = Array.from(e.target.files);
+    
+    files.forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 col-sm-6';
+                col.innerHTML = `
+                    <div class="card border-success">
+                        <img src="${e.target.result}" class="card-img-top" alt="Preview" style="height: 150px; object-fit: cover;">
+                        <div class="card-body p-2 text-center">
+                            <small class="text-success"><i class="fas fa-plus-circle"></i> New</small><br>
+                            <small class="text-muted">${file.name}</small>
+                        </div>
+                    </div>
+                `;
+                preview.appendChild(col);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

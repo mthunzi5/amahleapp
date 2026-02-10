@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4"><i class="fas fa-shield-alt"></i> Admin Governance Dashboard</h1>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ total_users }}</h3>
+                    <p class="card-text">Total Users</p>
+                    <small>{{ active_users }} active, {{ suspended_users }} suspended</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ total_properties }}</h3>
+                    <p class="card-text">Total Properties</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3 class="card-title">{{ total_bookings }}</h3>
+                    <p class="card-text">Total Bookings</p>
+                    <small>{{ pending_bookings}} pending</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning">
+                <div class="card-body">
+                    <h3 class="card-title">{{ pending_reports }}</h3>
+                    <p class="card-text">Pending Reports</p>
+                    <a href="{{ url_for('admin_governance.reports') }}" class="btn btn-sm btn-dark mt-2">View Reports</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Recent Reports -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Recent Reports</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_reports %}
+                        <div class="list-group">
+                            {% for report in recent_reports %}
+                            <a href="{{ url_for('admin_governance.report_detail', report_id=report.id) }}" 
+                               class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ report.reported_type|capitalize }} #{{ report.reported_id }}</h6>
+                                    <small>{{report.created_at|datetime('%m/%d %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1"><strong>Reason:</strong> {{ report.reason }}</p>
+                                <small>by {{ report.reporter.username }}</small>
+                                <span class="badge bg-{{ 'warning' if report.status == 'pending' else 'success' }} float-end">
+                                    {{ report.status }}
+                                </span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('admin_governance.reports') }}" class="btn btn-outline-danger mt-3 w-100">
+                            View All Reports
+                        </a>
+                    {% else %}
+                        <p class="text-muted text-center">No recent reports</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activity %}
+                        <div class="list-group">
+                            {% for log in recent_activity %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ log.action|replace('_', ' ')|title }}</h6>
+                                    <small>{{ log.created_at|datetime('%m/%d %H:%M') }}</small>
+                                </div>
+                                <p class="mb-1 small">{{ log.description }}</p>
+                                {% if log.user_id %}
+                                    <small class="text-muted">by User #{{ log.user_id }}</small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <a href="{{ url_for('admin_governance.activity_logs') }}" class="btn btn-outline-info mt-3 w-100">
+                            View All Logs
+                        </a>
+                    {% else %}
+                        <p class="text-muted text-center">No recent activity</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin_governance.users') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-users"></i> Manage Users
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin_governance.reports') }}" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-flag"></i> Review Reports
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin_governance.activity_logs') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-list"></i> Activity Logs
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-database"></i> Database Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

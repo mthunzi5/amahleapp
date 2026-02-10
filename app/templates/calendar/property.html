@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ property.title }} - Availability Calendar{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+<style>
+    #calendar {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .fc-event {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ property.title }}</h1>
+            <p class="text-muted">
+                <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.province }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('main.property_detail', id=property.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Property
+            </a>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-calendar-alt"></i> Availability Calendar</h4>
+        </div>
+        <div class="card-body p-4">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Green blocks</strong> represent approved bookings. Click on any booking to view details.
+            </div>
+            
+            <div id='calendar'></div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Details Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Booking Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="bookingDetails">
+                <!-- Booking details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listMonth'
+        },
+        events: '/calendar/api/property/{{ property.id }}/bookings',
+        eventClick: function(info) {
+            var event = info.event;
+            var props = event.extendedProps;
+            
+            var html = `
+                <div class="mb-3">
+                    <h6><strong>Rooms:</strong></h6>
+                    <p>${props.rooms} room(s)</p>
+                </div>
+                <div class="mb-3">
+                    <h6><strong>Price:</strong></h6>
+                    <p>R${props.price.toFixed(2)}</p>
+                </div>
+                <div class="mb-3">
+                    <h6><strong>Check-in Date:</strong></h6>
+                    <p>${event.start.toLocaleDateString()}</p>
+                </div>
+                <div class="mb-3">
+                    <h6><strong>Status:</strong></h6>
+                    <p><span class="badge bg-success">${props.status}</span></p>
+                </div>
+            `;
+            
+            {% if is_owner %}
+            if (props.tenant) {
+                html += `
+                    <div class="mb-3">
+                        <h6><strong>Tenant:</strong></h6>
+                        <p>${props.tenant}<br>
+                        <small class="text-muted">${props.tenant_email}</small><br>
+                        ${props.tenant_phone ? '<small class="text-muted">' + props.tenant_phone + '</small>' : ''}</p>
+                    </div>
+                `;
+            }
+            {% endif %}
+            
+            if (props.message) {
+                html += `
+                    <div class="mb-3">
+                        <h6><strong>Message:</strong></h6>
+                        <p class="text-muted">${props.message || 'No message'}</p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('bookingDetails').innerHTML = html;
+            var modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+            modal.show();
+        },
+        eventDidMount: function(info) {
+            info.el.style.cursor = 'pointer';
+        }
+    });
+    
+    calendar.render();
+});
+</script>
+{% endblock %}

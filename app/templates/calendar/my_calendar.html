@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}My Calendar - Amahle Rentals{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+<style>
+    #calendar {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">
+        <i class="fas fa-calendar-alt"></i> 
+        {% if current_user.role == 'landlord' %}My Bookings Calendar{% else %}My Booking Calendar{% endif %}
+    </h1>
+    
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                {% if current_user.role == 'landlord' %}
+                    <strong>Blue events</strong> are bookings for your properties. Click on any event to view tenant details.
+                {% else %}
+                    <strong>Green events</strong> are your approved bookings. Click on any event to view property details.
+                {% endif %}
+            </div>
+            
+            <div id='calendar'></div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Booking Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventDetails">
+                <!-- Event details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listMonth'
+        },
+        events: '/calendar/api/my-bookings',
+        eventClick: function(info) {
+            var event = info.event;
+            var props = event.extendedProps;
+            
+            var html = `
+                <div class="mb-3">
+                    <h6><strong>Property:</strong></h6>
+                    <p>${props.property}<br>
+                    <small class="text-muted">${props.property_address}</small></p>
+                </div>
+                <div class="mb-3">
+                    <h6><strong>Rooms:</strong></h6>
+                    <p>${props.rooms} room(s)</p>
+                </div>
+                <div class="mb-3">
+                    <h6><strong>Price:</strong></h6>
+                    <p>R${props.price.toFixed(2)}</p>
+                </div>
+                <div class="mb-3">
+                    <h6><strong>Check-in Date:</strong></h6>
+                    <p>${event.start.toLocaleDateString()}</p>
+                </div>
+            `;
+            
+            {% if current_user.role == 'landlord' %}
+            if (props.tenant) {
+                html += `
+                    <div class="mb-3">
+                        <h6><strong>Tenant:</strong></h6>
+                        <p>${props.tenant}<br>
+                        <small class="text-muted">${props.tenant_email}</small></p>
+                    </div>
+                `;
+            }
+            {% endif %}
+            
+            document.getElementById('eventDetails').innerHTML = html;
+            var modal = new bootstrap.Modal(document.getElementById('eventModal'));
+            modal.show();
+        }
+    });
+    
+    calendar.render();
+});
+</script>
+{% endblock %}

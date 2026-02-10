@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
             bsAlert.close();
         }, 5000);
     });
+    
+    // Wishlist Toggle Functionality
+    initWishlist();
 
     // Confirm delete actions
     const deleteButtons = document.querySelectorAll('[data-confirm-delete]');
@@ -230,6 +233,58 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         alertDiv.remove();
     }, 5000);
+}
+
+// Wishlist Functionality
+function initWishlist() {
+    // Load wishlist status for all properties on page
+    document.querySelectorAll('.wishlist-toggle').forEach(button => {
+        const propertyId = button.dataset.propertyId;
+        
+        // Check if in wishlist
+        fetch(`/wishlist/check/${propertyId}`)
+            .then(response => response.json())
+            .then(data => {
+                const icon = button.querySelector('.wishlist-icon');
+                if (data.in_wishlist) {
+                    icon.style.color = '#dc3545';
+                    button.title = 'Remove from wishlist';
+                }
+            })
+            .catch(error => console.error('Error checking wishlist:', error));
+        
+        // Toggle wishlist on click
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            fetch(`/wishlist/toggle/${propertyId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const icon = button.querySelector('.wishlist-icon');
+                    if (data.in_wishlist) {
+                        icon.style.color = '#dc3545';
+                        button.title = 'Remove from wishlist';
+                        showAlert('success', 'Added to wishlist!');
+                    } else {
+                        icon.style.color = '#ddd';
+                        button.title = 'Add to wishlist';
+                        showAlert('info', 'Removed from wishlist');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling wishlist:', error);
+                showAlert('danger', 'Error updating wishlist');
+            });
+        });
+    });
 }
 
 // Export functions for use in other scripts

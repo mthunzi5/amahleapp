@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4"><i class="fas fa-users"></i> User Management</h1>
+    
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{{ url_for('admin_governance.users') }}" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="Search username, email, or name..." 
+                           value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="role" class="form-select">
+                        <option value="">All Roles</option>
+                        <option value="admin" {% if request.args.get('role') == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="landlord" {% if request.args.get('role') == 'landlord' %}selected{% endif %}>Landlord</option>
+                        <option value="tenant" {% if request.args.get('role') == 'tenant' %}selected{% endif %}>Tenant</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                        <option value="suspended" {% if request.args.get('status') == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Users Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Registered</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr class="{% if not user.is_active %}table-danger{% endif %}">
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'danger' if user.is_admin else 'success' if user.is_landlord else 'primary' }}">
+                                        {{ 'Admin' if user.is_admin else 'Landlord' if user.is_landlord else 'Tenant' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        {% set suspension = user.suspensions|selectattr('is_active', 'equalto', True)|first %}
+                                        <span class="badge bg-danger" title="{{ suspension.reason if suspension else 'Suspended' }}">
+                                            Suspended
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.date_registered|datetime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if not user.is_admin %}
+                                        {% if user.is_active %}
+                                            <button type="button" class="btn btn-sm btn-warning" 
+                                                    data-bs-toggle="modal" data-bs-target="#suspendModal{{ user.id }}">
+                                                <i class="fas fa-ban"></i> Suspend
+                                            </button>
+                                        {% else %}
+                                            <form method="post" action="{{ url_for('admin_governance.unsuspend_user', user_id=user.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Unsuspend this user?');">
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check"></i> Unsuspend
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Protected</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            
+                            <!-- Suspend Modal -->
+                            <div class="modal fade" id="suspendModal{{ user.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="post" action="{{ url_for('admin_governance.suspend_user', user_id=user.id) }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Suspend User: {{ user.username }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="reason{{ user.id }}" class="form-label">Reason *</label>
+                                                    <textarea name="reason" id="reason{{ user.id }}" class="form-control" 
+                                                              rows="3" required></textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="duration{{ user.id }}" class="form-label">Duration (days)</label>
+                                                    <input type="number" name="duration" id="duration{{ user.id }}" 
+                                                           class="form-control" min="1" placeholder="Leave empty for permanent">
+                                                    <small class="text-muted">Leave empty for permanent suspension</small>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-warning">Suspend User</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if pagination %}
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin_governance.users', page=pagination.prev_num, search=request.args.get('search', ''), role=request.args.get('role', ''), status=request.args.get('status', '')) }}">Previous</a>
+                        </li>
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('admin_governance.users', page=page_num, search=request.args.get('search', ''), role=request.args.get('role', ''), status=request.args.get('status', '')) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('admin_governance.users', page=pagination.next_num, search=request.args.get('search', ''), role=request.args.get('role', ''), status=request.args.get('status', '')) }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <p class="text-muted text-center">No users found</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

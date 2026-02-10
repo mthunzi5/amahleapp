@@ -11,7 +11,7 @@
                     <h2 class="mb-0">Add New Property</h2>
                 </div>
                 <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('landlord.add_property') }}">
+                    <form method="POST" action="{{ url_for('landlord.add_property') }}" enctype="multipart/form-data">
                         <h4 class="mb-3">Basic Information</h4>
                         <div class="row mb-3">
                             <div class="col-md-12">
@@ -102,6 +102,16 @@
                             <div class="form-text">Separate multiple amenities with commas</div>
                         </div>
                         
+                        <h4 class="mb-3 mt-4">Property Images (Optional)</h4>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Images</label>
+                            <input type="file" name="images" class="form-control" multiple accept="image/*" id="imageUpload">
+                            <div class="form-text">You can upload multiple images (PNG, JPG, JPEG, GIF, WEBP). Max 16MB per file.</div>
+                        </div>
+                        
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="row g-3 mb-3"></div>
+                        
                         <hr class="my-4">
                         
                         <div class="d-grid gap-2">
@@ -118,4 +128,38 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+// Image preview functionality
+document.getElementById('imageUpload').addEventListener('change', function(e) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    
+    const files = Array.from(e.target.files);
+    
+    files.forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3 col-sm-6';
+                col.innerHTML = `
+                    <div class="card">
+                        <img src="${e.target.result}" class="card-img-top" alt="Preview" style="height: 150px; object-fit: cover;">
+                        <div class="card-body p-2 text-center">
+                            <small class="text-muted">${file.name}</small>
+                        </div>
+                    </div>
+                `;
+                preview.appendChild(col);
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}

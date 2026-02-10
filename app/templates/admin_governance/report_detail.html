@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Report #{{ report.id }} - Amahle Rentals{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">
+        <i class="fas fa-flag"></i> Report #{{ report.id }}
+        <span class="badge bg-{{ 'warning' if report.status == 'pending' else 'info' if report.status == 'investigating' else 'success' if report.status == 'resolved' else 'secondary' }}">
+            {{ report.status|upper }}
+        </span>
+    </h1>
+    
+    <div class="row">
+        <!-- Report Information -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Report Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th width="200">Report Type</th>
+                            <td>
+                                <span class="badge bg-{{ 'warning' if report.reported_type == 'property' else 'info' if report.reported_type == 'user' else 'secondary' }}">
+                                    {{ report.reported_type|capitalize }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Reported ID</th>
+                            <td>#{{ report.reported_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Reason</th>
+                            <td><strong>{{ report.reason }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Description</th>
+                            <td>{{ report.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Reporter</th>
+                            <td>{{ report.reporter.username }} ({{ report.reporter.email }})</td>
+                        </tr>
+                        <tr>
+                            <th>Reported On</th>
+                            <td>{{ report.created_at|datetime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        {% if report.resolved_at %}
+                        <tr>
+                            <th>Resolved On</th>
+                            <td>{{ report.resolved_at|datetime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Resolved By</th>
+                            <td>
+                                {% if report.resolved_by_user %}
+                                    {{ report.resolved_by_user.username }}
+                                {% else %}
+                                    System
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Admin Notes</th>
+                            <td>{{ report.admin_notes or 'No notes' }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Reported Resource -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-folder-open"></i> Reported {{ report.reported_type|capitalize }} Details</h5>
+                </div>
+                <div class="card-body">
+                    {% if report.reported_type == 'property' and reported_resource %}
+                        <h5>{{ reported_resource.title }}</h5>
+                        <p><strong>Address:</strong> {{ reported_resource.address }}, {{ reported_resource.city }}</p>
+                        <p><strong>Price:</strong> R{{ reported_resource.rent_amount }}/mo</p>
+                        <p><strong>Description:</strong> {{ reported_resource.description }}</p>
+                        <p><strong>Owner:</strong> {{ reported_resource.landlord.username }}</p>
+                        <a href="{{ url_for('main.property_detail', property_id=reported_resource.id) }}" 
+                           class="btn btn-sm btn-primary" target="_blank">
+                            View Property <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    {% elif report.reported_type == 'user' and reported_resource %}
+                        <h5>{{ reported_resource.username }}</h5>
+                        <p><strong>Name:</strong> {{ reported_resource.first_name }} {{ reported_resource.last_name }}</p>
+                        <p><strong>Email:</strong> {{ reported_resource.email }}</p>
+                        <p><strong>Role:</strong> {{ 'Admin' if reported_resource.is_admin else 'Landlord' if reported_resource.is_landlord else 'Tenant' }}</p>
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-{{ 'success' if reported_resource.is_active else 'danger' }}">
+                                {{ 'Active' if reported_resource.is_active else 'Suspended' }}
+                            </span>
+                        </p>
+                    {% elif report.reported_type == 'review' and reported_resource %}
+                        <p><strong>Rating:</strong> {{ reported_resource.rating }}/5</p>
+                        <p><strong>Comment:</strong> {{ reported_resource.comment }}</p>
+                        <p><strong>Reviewer:</strong> {{ reported_resource.reviewer.username }}</p>
+                        <p><strong>Date:</strong> {{ reported_resource.created_at|datetime('%Y-%m-%d') }}</p>
+                    {% else %}
+                        <p class="text-muted">Resource not found or deleted</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions Panel -->
+        <div class="col-md-4">
+            {% if report.status in ['pending', 'investigating'] %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-check"></i> Mark as Resolved</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin_governance.resolve_report', report_id=report.id) }}">
+                        <input type="hidden" name="action" value="resolved">
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Admin Notes</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3" 
+                                      placeholder="Enter resolution details..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check-circle"></i> Resolve Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-times"></i> Dismiss Report</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin_governance.resolve_report', report_id=report.id) }}">
+                        <input type="hidden" name="action" value="dismissed">
+                        <div class="mb-3">
+                            <label for="notes_dismiss" class="form-label">Reason for Dismissal</label>
+                            <textarea name="notes" id="notes_dismiss" class="form-control" rows="3" 
+                                      placeholder="Why is this report being dismissed?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-secondary w-100">
+                            <i class="fas fa-ban"></i> Dismiss Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            {% if report.status == 'pending' %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-search"></i> Mark as Investigating</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('admin_governance.resolve_report', report_id=report.id) }}">
+                        <input type="hidden" name="action" value="investigating">
+                        <p class="text-muted small">Mark this report as under investigation</p>
+                        <button type="submit" class="btn btn-info w-100">
+                            <i class="fas fa-search-plus"></i> Start Investigation
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+            
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <a href="{{ url_for('admin_governance.reports') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left"></i> Back to Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -178,6 +178,14 @@
                 {% for property in properties[:6] %}
                 <div class="col-md-4 mb-3">
                     <div class="card">
+                        {% set images = property.get_images_list() %}
+                        {% if images %}
+                            <img src="{{ url_for('static', filename=images[0]) }}" 
+                                 class="card-img-top" 
+                                 alt="{{ property.title }}"
+                                 style="height: 150px; object-fit: cover;"
+                                 onerror="this.src='https://via.placeholder.com/300x150?text=Property'">
+                        {% endif %}
                         <div class="card-body">
                             <h5 class="card-title">{{ property.title }}</h5>
                             <p class="text-muted mb-2">{{ property.city }}</p>
