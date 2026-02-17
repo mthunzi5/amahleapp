@@ -1,20 +1,33 @@
 """
 Initialize the database with sample data for testing
 """
+import os
 from app import create_app, db
 from app.models import User, Property, Booking, Review
 from datetime import datetime, timedelta
 
 def init_db():
     app = create_app()
+    is_production = os.environ.get('FLASK_ENV') == 'production'
     
     with app.app_context():
-        # Drop all tables and recreate
-        print("Dropping all tables...")
-        db.drop_all()
-        
-        print("Creating all tables...")
-        db.create_all()
+        if is_production:
+            # In production, only create tables if they don't exist
+            print("Production mode: Creating database tables...")
+            db.create_all()
+            
+            # Check if admin user exists
+            admin_exists = User.query.filter_by(username='admin').first()
+            if admin_exists:
+                print("Database already initialized. Skipping sample data.")
+                return
+        else:
+            # Drop all tables and recreate (development only)
+            print("Development mode: Dropping all tables...")
+            db.drop_all()
+            
+            print("Creating all tables...")
+            db.create_all()
         
         # Create admin user
         print("Creating admin user...")
