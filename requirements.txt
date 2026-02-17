@@ -42,7 +42,7 @@ PyJWT==2.11.0
 requests==2.31.0
 
 # Data Validation
-pydantic==2.10.0
+pydantic==1.10.15
 
 # Image Processing
 Pillow==11.0.0
