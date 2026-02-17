@@ -7,12 +7,9 @@ class Config:
     # Flask Configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
-    # Handle Render's PostgreSQL database URL
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url:
-        # Render uses postgres:// but SQLAlchemy needs postgresql://
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    SQLALCHEMY_DATABASE_URI = database_url or 'sqlite:///rental_booking.db'
+    # Database Configuration
+    # Use SQLite everywhere (local and production)
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///rental_booking.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = 'app/static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
