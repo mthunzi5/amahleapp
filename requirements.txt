@@ -45,7 +45,7 @@ requests==2.31.0
 pydantic==2.5.3
 
 # Image Processing
-Pillow==10.1.0
+Pillow==11.0.0
 
 # Production Server
 gunicorn==21.2.0
