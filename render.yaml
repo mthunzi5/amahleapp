@@ -6,10 +6,10 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       python init_db.py
-    startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT "app:create_app()"
+    startCommand: gunicorn --bind 0.0.0.0:$PORT "app:create_app()"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.13.7
+        value: 3.13.0
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY

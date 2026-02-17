@@ -132,10 +132,10 @@ ENABLE_RECOMMENDATIONS=True
 
 ## File Structure for Deployment
 
-- `Procfile` - Tells Render how to run your app
+- `Procfile` - Tells Render how to run your app (uses gunicorn sync worker)
 - `runtime.txt` - Specifies Python version
 - `render.yaml` - Render infrastructure configuration
-- `requirements.txt` - Python dependencies with gunicorn, eventlet, psycopg2
+- `requirements.txt` - Python dependencies
 - `config.py` - SQLite database configuration
 - `.env.example` - Template for environment variables
 
