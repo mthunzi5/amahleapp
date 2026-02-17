@@ -34,9 +34,9 @@ reportlab==4.0.9
 python-docx==0.8.11
 PyPDF2==3.0.1
 
-# AI/ML for Recommendations
-scikit-learn==1.4.0
-pandas==2.1.4
+# AI/ML for Recommendations (Updated for Python 3.13+ compatibility)
+scikit-learn==1.5.0
+pandas==2.2.0
 
 # Analytics
 plotly==5.18.0
